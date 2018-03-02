@@ -28,7 +28,9 @@ import           Network.Wai.Handler.Warp
 import           Servant
 
 type API
-   = "user" :> ReqBody '[ JSON] User :> PostCreated '[ JSON] (Key User) :<|> "user" :> Get '[ JSON] [User] :<|> "user" :> Capture "userId" (Key User) :> Get '[ JSON] (Maybe User)
+    =  "user" :> ReqBody '[ JSON] User :> PostCreated '[ JSON] (Key User)
+  :<|> "user" :> Get '[ JSON] [User]
+  :<|> "user" :> Capture "userId" (Key User) :> Get '[ JSON] User
 
 makeApp :: FilePath -> IO Application
 makeApp dbFile = do
@@ -75,13 +77,12 @@ getAllUsersHandler pool = liftIO $ getAllUsers
         users <- selectList [] []
         return $ map entityVal users
 
-getUserWithId :: ConnectionPool -> (Key User) -> Handler (Maybe User)
-getUserWithId pool userId = liftIO $ getUser
+getUserWithId :: ConnectionPool -> (Key User) -> Handler User
+getUserWithId pool userId
+  = do maybeUser <- liftIO $ getUser
+       case maybeUser of
+          Nothing -> throwError err404
+          Just uu -> return uu
   where
     getUser :: IO (Maybe User)
-    getUser =
-      flip runSqlPersistMPool pool $ do
-        maybeUser <- get userId
-        case maybeUser of
-          Nothing -> return Nothing -- TODO: review how to directly do: throwError err404
-          Just uu -> return $ Just uu
+    getUser = flip runSqlPersistMPool pool (get userId)
