@@ -3,4 +3,4 @@ module Main where
 import           Lib
 
 main :: IO ()
-main = startApp ":memory:"
+main = startApp "blogs.sqlite3"

@@ -11,24 +11,20 @@
 module Models where
 
 import           Data.Aeson
+import           Data.Aeson.TH
 import           Data.Text
 
 import           Database.Persist.TH
 
-share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
+share
+  [mkPersist sqlSettings, mkMigrate "migrateAll"]
+  [persistLowerCase|
 User
-  name Text
-  age  Int
-  UniqueName name
+  name       Text
+  lastName   Text
+  email      Text
+  password   Text
   deriving Eq Read Show
 |]
 
-instance FromJSON User where
-  parseJSON = withObject "User" $ \ v ->
-    User <$> v .: "name"
-         <*> v .: "age"
-
-instance ToJSON User where
-  toJSON (User name age) =
-    object [ "name" .= name
-           , "age"  .= age  ]
+$(deriveJSON defaultOptions ''User)
